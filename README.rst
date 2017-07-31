@@ -31,7 +31,7 @@ Template Syntax
 Python Bindings
 ^^^^^^^^^^^^^^^
 
-'' code-block:: python
+.. code-block:: python
 
     from jinjatex import Jinjatex
 
