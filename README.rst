@@ -15,15 +15,22 @@ Installation
 Usage
 -----
 
-The main :code:`Jinjatex` class provides wrappers to compile tex templates
+The main `Jinjatex` class provides wrappers to compile tex templates
 with jinja. Tex is not included, so make sure the binaries are available.
 
 Template Syntax
 ^^^^^^^^^^^^^^^
 
-.. code-block:: none
+The jinja template syntax is changed a little to not interference with latex
+commands:
 
+.. code-block:: none
+    
+    ((( This is a variable )))
     ((= This is a comment. =))
+    ((* This is a block *))
+    
+    ((= Example =))
     ((* for value in somelist *))
         ((( value )))
     ((* endfor *))

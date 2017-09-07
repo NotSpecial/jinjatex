@@ -17,8 +17,10 @@ import subprocess
 from os import path
 import re
 from tempfile import TemporaryDirectory
-from jinja2 import (
-    Environment, PackageLoader, StrictUndefined, TemplateNotFound)
+from jinja2 import Environment
+
+
+MAX_RUNS = 10  # Avoid infinite oscillations
 
 
 class Error(Exception):
@@ -68,7 +70,6 @@ class Jinjatex(object):
         return render_tex(rendered, engine)
 
 
-
 def _escape_tex(value):
     """Filter to make strings tex safe."""
     if not isinstance(value, str):
@@ -102,6 +103,11 @@ def render_tex(source, tex_engine='pdflatex'):
         # but it seems there is an upper limit on the length
         texfile = path.join(tempdir, 'temp.tex')
 
+        # Helper to read log file
+        def read_log():
+            with open(path.join(tempdir, 'temp.log'), 'rb') as file:
+                return file.read().decode('utf-8')
+
         with open(texfile, 'wb') as file:
             file.write(source.encode('utf-8'))
 
@@ -111,10 +117,13 @@ def render_tex(source, tex_engine='pdflatex'):
                     "-interaction=batchmode", texfile]
 
         try:
-            # TODO: Maybe specify number of compilations or check log?
-            # Compile twice to resolve references
-            subprocess.check_output(commands)
-            subprocess.check_output(commands)
+            for _ in range(MAX_RUNS):
+                subprocess.check_output(commands)
+                # Look for the keyword 'run' in the log, indicating we need
+                # to compile again to resolve references etc.
+                if 'run' not in read_log():
+                    break
+
         except FileNotFoundError:
             # The command was not recognized
             raise Error("The command '%s' failed. Is everything installed?"
@@ -122,10 +131,8 @@ def render_tex(source, tex_engine='pdflatex'):
         except subprocess.CalledProcessError as error:
             # Try to return tex log in error message
             try:
-                with open(path.join(tempdir, 'temp.log'), 'rb') as file:
-                    log = file.read().decode('utf-8')
                 raise Error("Something went wrong during compilation!\n"
-                            "Here is the log content:\n\n %s" % log)
+                            "Here is the log content:\n\n %s" % read_log())
             except FileNotFoundError:
                 # No log! Show output of command instead
                 raise Error(error.output.decode('utf-8'))
