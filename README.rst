@@ -47,9 +47,20 @@ Python Bindings
     # Example 1: Compile string templates
 
     template_string = dedent(r"""
+        % Example Template
         \documentclass{article}
+
         \begin{document}
         Hi ((( name )))!
+
+        The document will be compiled multiple times, until
+        all references etc. are resolved, like this one: \ref{somelabel}
+
+        \section{Somesection}
+        \label{somelabel}
+
+        Some more content.
+
         \end{document}
         """)
 
